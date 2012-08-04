@@ -38,7 +38,7 @@ class CacheClass(BaseCache):
         """
         super(CacheClass, self).__init__(params)
         options = params.get('OPTIONS', {})
-        password = params.get('password', options.get('PASSWORD', None))
+        password = params.get('password', options.get('PASSWORD'))
         db = params.get('db', options.get('DB', 1))
         try:
             db = int(db)
@@ -61,7 +61,18 @@ class CacheClass(BaseCache):
                 port = 6379
         else:
             port = 6379
-        self._cache = redis.Redis(host=host, port=port, db=db, password=password)
+
+        redis_kwargs = {
+            'host': host,
+            'port': port,
+            'db': db,
+            'password': password,
+        }
+
+        if redis.VERSION >= (2,6,0):
+            self._cache = redis.Redis(**redis_kwargs, decode_responses=True)
+        else:
+            self._cache = redis.Redis(**redis_kwargs)
 
     def make_key(self, key, version=None):
         """
